@@ -243,6 +243,26 @@ const useGameStore = create(
           return
         }
 
+   // Block special case — set playerBlocking true so resolveEnemyTurn applies blockBonus
+        if (action === 'block') {
+          const result = resolvePlayerAction('block', {
+            player: s.player,
+            enemies: s.enemies,
+            selectedTarget: s.selectedTarget,
+            battleBuffs: s.battleBuffs,
+            blockBonus: s.blockBonus,
+            apRemaining: s.apRemaining,
+          })
+          result.logs.forEach(l => get().addLog(l.msg, l.cls || ''))
+          set({
+            playerBlocking: true,
+            blockBonus: result.newBlockBonus,
+            apRemaining: result.newAp,
+          })
+          if (result.newAp <= 0) get().doEnemyTurn()
+          return
+        }
+       
         const result = resolvePlayerAction(action, {
           player: s.player,
           enemies: s.enemies,
