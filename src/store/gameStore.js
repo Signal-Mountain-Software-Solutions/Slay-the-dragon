@@ -5,9 +5,10 @@ import {
   createDragon, scaleDragon, mkEnemy, getEncounterByTier, buildEnemies,
   resolvePlayerAction, resolveEnemyTurn, AP_COSTS,
   handleTreasure, handleEvent, handleCurse, placeQuestTile, pickQuestTemplate,
+  rollWildernessOutcome, applyWildernessBerries, applyWildernessBrambles, dragonSightingReveal,
 } from '../logic/game'
 import { applyUseEffect, getItemEffect, ITEM_DEFS } from '../constants/items'
-import { BLESSING_NAMES, GRID_SIZE } from '../constants/enemies'
+import { BLESSING_NAMES, GRID_SIZE, WILDERNESS_QUEST_TEMPLATES } from '../constants/enemies'
 
 const INITIAL_COMBAT = {
   enemies: [], selectedTarget: 0,
@@ -32,12 +33,14 @@ const useGameStore = create(
       townVisited: { shop: false, tavern: false, church: false },
 
       // ── ui ──
-      gameLog: ['Welcome to How to Slay a Dragon! Your quest: Defeat the Dragon at (9,9)'],
+      gameLog: [{ msg: 'Welcome to How to Slay a Dragon! Your quest: Defeat the Dragon at (9,9)', cls: 'log-gold' }],
       screen: 'exploring', // exploring | combat | town | victory | gameover
       townScreen: null,    // null | shop | tavern | church
       notification: null,
       pendingQuestReward: null,
       pendingBlessing: null,
+      pendingWandererOffer: false,
+      dragonRevealedTiles: [],
 
       // ── combat ──
       ...INITIAL_COMBAT,
@@ -53,10 +56,14 @@ const useGameStore = create(
           dragon: createDragon(),
           activeQuest: null,
           townVisited: { shop: false, tavern: false, church: false },
-          gameLog: ['Welcome to How to Slay a Dragon! Your quest: Defeat the Dragon at (9,9)'],
+          gameLog: [{ msg: 'Welcome to How to Slay a Dragon! Your quest: Defeat the Dragon at (9,9)', cls: 'log-gold' }],
           screen: 'exploring',
           townScreen: null,
           notification: null,
+          pendingBlessing: null,
+          pendingQuestReward: null,
+          pendingWandererOffer: false,
+          dragonRevealedTiles: [],
           ...INITIAL_COMBAT,
         })
       },
@@ -96,13 +103,20 @@ const useGameStore = create(
         // Quest completion
         if (s.activeQuest && s.activeQuest.tile.x === pos.x && s.activeQuest.tile.y === pos.y) {
           const { gold, exp, desc } = s.activeQuest.reward
-          const { player, notifications } = gainExp({ ...s.player, gold: s.player.gold + gold }, exp)
+          // 30% chance of bonus vision item with quest reward
+          const visionBonus = Math.random() < 0.3
+            ? (['Seer Stone', 'Local Map'][Math.floor(Math.random() * 2)])
+            : null
+          let basePlayer = { ...s.player, gold: s.player.gold + gold }
+          if (visionBonus) basePlayer = { ...basePlayer, inventory: [...basePlayer.inventory, visionBonus] }
+          const { player, notifications } = gainExp(basePlayer, exp)
           set({ player, activeQuest: null })
           notifications.forEach(n => {
             if (n.type === 'level') get().addLog(`🎉 LEVEL UP! Now Level ${n.level}!`, 'log-level')
             if (n.type === 'skill') get().addLog(`✨ New Skill: ${n.skill}!`, 'log-level')
           })
           get().addLog(`⭐ Quest complete: "${desc}"! Earned ${gold} Gold & ${exp} EXP!`, 'log-level')
+          if (visionBonus) get().addLog(`🎁 Bonus reward: ${visionBonus}!`, 'log-gold')
           get().showNotification('Quest Complete!')
         }
 
@@ -134,16 +148,78 @@ const useGameStore = create(
           }
           case 'event': {
             const result = handleEvent(get().player)
-            set({ player: result.player })
-            get().addLog(`📜 EVENT: Found a ${result.ev}!`)
-            if (result.item)     get().addLog(`Received: ${result.item} (${getItemEffect(result.item)})`, 'log-gold')
-            if (result.blessing) get().addLog(`Received: ${result.blessing} (${getItemEffect(result.blessing)})`, 'log-gold')
+            if (result.wandererOffer) {
+              // Wanderer encounter — store it as a pending offer, show via notification
+              set({ pendingWandererOffer: true })
+              get().addLog('📜 EVENT: You meet a strange man in the woods...', '')
+              get().addLog('He offers you a mysterious gem that will show you the future for 100 Gold.', 'log-gold')
+            } else {
+              set({ player: result.player })
+              get().addLog(`📜 EVENT: Found a ${result.ev}!`)
+              if (result.item)     get().addLog(`Received: ${result.item} (${getItemEffect(result.item)})`, 'log-gold')
+              if (result.blessing) get().addLog(`Received: ${result.blessing} (${getItemEffect(result.blessing)})`, 'log-gold')
+            }
             break
           }
           case 'curse': {
             const { player, curse } = handleCurse(get().player)
             set({ player })
             get().addLog(`💀 CURSE! Afflicted: ${curse} (${getItemEffect(curse)})`, 'log-danger')
+            break
+          }
+          case 'wilderness': {
+            get().addLog('🌲 You have entered an unexplored wilderness...', '')
+            const outcome = rollWildernessOutcome()
+            const s2 = get()
+
+            switch (outcome) {
+              case 'berries': {
+                const { player: p, heal } = applyWildernessBerries(s2.player)
+                set({ player: p })
+                get().addLog(`🍓 You find wild berries and eat your fill. Restored ${heal} HP!`, 'log-victory')
+                break
+              }
+              case 'ambush': {
+                get().addLog('⚔ Something lunges from the undergrowth — you\'re ambushed!', 'log-danger')
+                const tier = Math.floor(Math.max(pos.x, pos.y) / 2)
+                get().startFight('fight', tier)
+                break
+              }
+              case 'traveler': {
+                if (s2.activeQuest) {
+                  get().addLog('🧭 A weary traveler approaches, but you already have a task to complete.', '')
+                } else {
+                  const reward = WILDERNESS_QUEST_TEMPLATES[Math.floor(Math.random() * WILDERNESS_QUEST_TEMPLATES.length)]
+                  const quest = placeQuestTile(pos, new Set(s2.visited), reward)
+                  if (quest) {
+                    set({ activeQuest: quest })
+                    get().addLog(`🧭 A traveler emerges from the trees with a task for you.`, '')
+                    get().addLog(`"${reward.desc}" — head to (${quest.tile.x}, ${quest.tile.y})`, 'log-gold')
+                    get().addLog(`Reward: ${reward.gold} Gold & ${reward.exp} EXP`, 'log-gold')
+                    get().showNotification('New Quest!')
+                  } else {
+                    get().addLog('🧭 A traveler passes by in silence. No quest to offer.', '')
+                  }
+                }
+                break
+              }
+              case 'brambles': {
+                const { player: p, dmg } = applyWildernessBrambles(s2.player)
+                set({ player: p })
+                get().addLog(`🌿 You stumble into thick brambles. Lost ${dmg} HP forcing your way through.`, 'log-danger')
+                if (p.hp <= 0) { get().endCombat(false) }
+                break
+              }
+              case 'dragon_sighting': {
+                const revealKeys = dragonSightingReveal(pos, new Set(s2.visited), s2.grid, GRID_SIZE)
+                const merged = [...new Set([...s2.dragonRevealedTiles, ...revealKeys])]
+                set({ dragonRevealedTiles: merged })
+                get().addLog('🐉 A dragon soars overhead, and in its wake you glimpse the land ahead!', 'log-gold')
+                get().addLog(`${revealKeys.length} surrounding tiles revealed.`, 'log-gold')
+                get().showNotification('Tiles Revealed!')
+                break
+              }
+            }
             break
           }
           case 'dragon': get().startDragonFight(); break
@@ -243,7 +319,7 @@ const useGameStore = create(
           return
         }
 
-   // Block special case — set playerBlocking true so resolveEnemyTurn applies blockBonus
+        // Block special case — set playerBlocking true so resolveEnemyTurn applies blockBonus
         if (action === 'block') {
           const result = resolvePlayerAction('block', {
             player: s.player,
@@ -262,7 +338,7 @@ const useGameStore = create(
           if (result.newAp <= 0) get().doEnemyTurn()
           return
         }
-       
+
         const result = resolvePlayerAction(action, {
           player: s.player,
           enemies: s.enemies,
@@ -402,7 +478,7 @@ const useGameStore = create(
         if (!name) return
         const { apply } = ITEM_DEFS[name] || {}
         const newPlayer = apply ? apply({ ...s.player, blessings: [...s.player.blessings, name] }) : s.player
-        set({ player: newPlayer, pendingBlessing: null, townVisited: { ...s.townVisited, church: true } })
+        set({ player: newPlayer, pendingBlessing: null, townScreen: null, townVisited: { ...s.townVisited, church: true } })
         get().addLog(`✦ Received ${name}! (${getItemEffect(name)})`, 'log-gold')
       },
 
@@ -410,6 +486,24 @@ const useGameStore = create(
         const name = BLESSING_NAMES[Math.floor(Math.random() * BLESSING_NAMES.length)]
         set({ pendingBlessing: name })
         return name
+      },
+
+      acceptWandererOffer: () => {
+        const s = get()
+        if (s.player.gold < 100) {
+          get().addLog('You cannot afford the wanderer\'s offer.', 'log-danger')
+          set({ pendingWandererOffer: false })
+          return
+        }
+        const newPlayer = { ...s.player, gold: s.player.gold - 100, inventory: [...s.player.inventory, 'Seer Stone'] }
+        set({ player: newPlayer, pendingWandererOffer: false })
+        get().addLog('💎 You purchase the Seer Stone! Tile types are now revealed.', 'log-gold')
+        get().showNotification('Seer Stone acquired!')
+      },
+
+      declineWandererOffer: () => {
+        set({ pendingWandererOffer: false })
+        get().addLog('You decline the wanderer\'s offer and continue on your way.', '')
       },
 
       acceptQuestReward: (gold, exp) => {
@@ -429,6 +523,7 @@ const useGameStore = create(
         turn: s.turn, grid: s.grid, dragon: s.dragon,
         activeQuest: s.activeQuest, gameLog: s.gameLog.slice(-20),
         screen: s.screen === 'combat' ? 'exploring' : s.screen,
+        dragonRevealedTiles: s.dragonRevealedTiles,
       }),
     }
   )
