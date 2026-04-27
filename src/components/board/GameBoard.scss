@@ -4,6 +4,8 @@
    a responsive square and pushing other UI into panels.
    ========================================================= */
 
+
+/* GameBoard layout */
 .gameboard {
   height: 100%;
   width: 100%;
@@ -13,126 +15,42 @@
   overflow: hidden;
 }
 
-/* ---------------------------
-   Responsive square board
-   --------------------------- */
+/* Square responsive board area */
 .boardFrame {
-  /* Use most of the phone width; cap for desktop */
   width: min(94vw, 640px);
-
-  /* Keep the board square so cells stay square */
   aspect-ratio: 1 / 1;
-
-  /* Center horizontally */
   margin: 0 auto;
-
-  /* Protect against any child overflow */
   overflow: hidden;
-
   border-radius: 12px;
 
-  /* Optional: subtle border/background */
   border: 1px solid rgba(255, 255, 255, 0.10);
   background: rgba(0, 0, 0, 0.12);
 }
 
-/* The actual grid area */
+/* CSS Grid driven by --grid-size set in JSX */
 .boardGrid {
   height: 100%;
   width: 100%;
   display: grid;
-
-  /* Let GRID_SIZE drive the layout via CSS var */
   grid-template-columns: repeat(var(--grid-size), 1fr);
   grid-template-rows: repeat(var(--grid-size), 1fr);
-
   gap: clamp(2px, 0.8vw, 6px);
   padding: clamp(4px, 1vw, 10px);
 
-  /* If your JSX renders row wrappers (it does),
-     flatten them so the cells become grid items. */
+  /* Your JSX renders row wrappers; flatten them */
   > * {
     display: contents;
   }
 }
 
-/* ---------------------------
-   Cells (matches GridCell.jsx)
-   --------------------------- */
-.cell {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-
-  border-radius: clamp(6px, 1.2vw, 12px);
-  border: 1px solid rgba(255, 255, 255, 0.10);
-  background: rgba(255, 255, 255, 0.06);
-
-  /* Responsive icon/text sizing */
-  font-size: clamp(14px, 3.8vw, 24px);
-  line-height: 1;
-
-  user-select: none;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* State classes you already assign in GridCell.jsx */
-.cell-current {
-  border-color: rgba(80, 200, 255, 0.65);
-  background: rgba(80, 200, 255, 0.18);
-}
-
-.cell-moveable {
-  border-color: rgba(120, 255, 170, 0.55);
-  background: rgba(120, 255, 170, 0.12);
-  cursor: pointer;
-
-  &:active {
-    transform: scale(0.98);
-  }
-}
-
-.cell-visited {
-  opacity: 0.75;
-}
-
-.cell-unknown {
-  opacity: 0.55;
-}
-
-.cell-quest {
-  border-color: rgba(255, 210, 120, 0.65);
-  background: rgba(255, 210, 120, 0.14);
-}
-
-.cell-dragon {
-  border-color: rgba(255, 80, 80, 0.65);
-  background: rgba(255, 80, 80, 0.14);
-}
-
-/* Improve focus accessibility for keyboard users */
-.cell:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.55);
-  outline-offset: 2px;
-}
-
-/* ---------------------------
-   Panels (Log + Moves)
-   Prevents squeezing the board
-   --------------------------- */
+/* Panels below board (log + moves) */
 .boardPanels {
   flex: 1 1 auto;
   min-height: 0;
-
   display: grid;
   gap: 10px;
-
-  /* Mobile: stack panels */
   grid-template-columns: 1fr;
 
-  /* Desktop: two columns */
   @media (min-width: 900px) {
     grid-template-columns: 1fr 1fr;
   }
@@ -147,11 +65,10 @@
   border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 12px;
   padding: 10px;
-
   background: rgba(0, 0, 0, 0.22);
 }
 
-/* Moves area */
+/* Moves */
 .movesTitle {
   font-weight: 700;
   margin-bottom: 8px;
@@ -191,19 +108,50 @@
   opacity: 0.85;
 }
 
-/* ---------------------------
-   Optional: tighten spacing on very small screens
-   --------------------------- */
-@media (max-width: 380px) {
-  .gameboard {
-    gap: 10px;
-  }
+/* Cell styling (matches GridCell.jsx classes) */
+.cell {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
 
-  .boardFrame {
-    width: min(96vw, 640px);
-  }
+  border-radius: clamp(6px, 1.2vw, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
 
-  .moveBtn {
-    padding: 7px 9px;
+  font-size: clamp(14px, 3.8vw, 24px);
+  line-height: 1;
+
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cell-current {
+  border-color: rgba(80, 200, 255, 0.65);
+  background: rgba(80, 200, 255, 0.18);
+}
+
+.cell-moveable {
+  border-color: rgba(120, 255, 170, 0.55);
+  background: rgba(120, 255, 170, 0.12);
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.98);
   }
 }
+
+.cell-visited { opacity: 0.75; }
+.cell-unknown { opacity: 0.55; }
+
+.cell-quest {
+  border-color: rgba(255, 210, 120, 0.65);
+  background: rgba(255, 210, 120, 0.14);
+}
+
+.cell-dragon {
+  border-color: rgba(255, 80, 80, 0.65);
+  background: rgba(255, 80, 80, 0.14);
+}
+``
