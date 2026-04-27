@@ -1,10 +1,10 @@
 export const ENCOUNTER_WEIGHTS = {
-  fight: 55, hard_fight: 5, event: 25, town: 5, camp: 5, treasure: 3, curse: 2,
+  fight: 48, hard_fight: 5, event: 20, town: 5, camp: 5, treasure: 3, curse: 2, wilderness: 12,
 }
 
 export const TERRAIN_ICONS = {
   fight: '⚔', hard_fight: '💀', event: '✦', town: '🏘', camp: '🏕',
-  treasure: '💰', curse: '☠', dragon: '🐉', start: '★',
+  treasure: '💰', curse: '☠', dragon: '🐉', start: '★', wilderness: '🌲',
 }
 
 export const ENCOUNTER_TIERS = {
@@ -58,6 +58,13 @@ export const QUEST_TEMPLATES = [
   { desc: 'Scout the dark forest edge',           gold: 130, exp: 250 },
 ]
 
+export const WILDERNESS_QUEST_TEMPLATES = [
+  { desc: 'Find the lost hermit deep in the forest', gold: 160, exp: 190 },
+  { desc: 'Gather rare herbs from the cursed glade', gold: 140, exp: 210 },
+  { desc: 'Track the beast that prowls these woods',  gold: 170, exp: 180 },
+  { desc: 'Bring word to the ranger outpost ahead',   gold: 120, exp: 220 },
+]
+
 export const BLESSING_NAMES = [
   'Blessing of Strength', 'Blessing of Defense',
   'Blessing of Vitality', 'Blessing of Endurance',
@@ -66,3 +73,10 @@ export const BLESSING_NAMES = [
 export const SKILL_POOL = ['Whirlwind Strike', 'Iron Will', 'Cleave', 'Parry', 'Berserk']
 
 export const GRID_SIZE = 10
+
+// Difficulty multipliers — applied to all enemy stats and dragon base/increment stats
+export const DIFFICULTY = {
+  easy:   { enemyMult: 1.00, dragonMult: 1.00, scoreBonus: 0,    label: 'Easy',   color: '#70C070', desc: 'For those learning the way of the sword.' },
+  medium: { enemyMult: 1.25, dragonMult: 1.25, scoreBonus: 500,  label: 'Medium', color: '#C8A040', desc: 'The realm is a dangerous place. Tread carefully.' },
+  hard:   { enemyMult: 1.50, dragonMult: 1.50, scoreBonus: 1500, label: 'Hard',   color: '#C84040', desc: 'Only legends survive. You will likely die.' },
+}
