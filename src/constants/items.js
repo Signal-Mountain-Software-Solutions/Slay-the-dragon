@@ -4,6 +4,8 @@ export const ITEM_DEFS = {
   'Ancient Artifact':    { effect: '+1 ATK, +1 DEF',     apply: p => ({ ...p, attack: p.attack + 1, defense: p.defense + 1 }) },
   'Enchanted Ring':      { effect: '+20 Max HP, +20 HP', apply: p => ({ ...p, max_hp: p.max_hp + 20, hp: p.hp + 20 }) },
   'Magic Scroll':        { effect: '+1 ATK, +1 DEF',     apply: p => ({ ...p, attack: p.attack + 1, defense: p.defense + 1 }) },
+  'Seer Stone':          { effect: 'Reveals all reachable tile types', apply: p => p },
+  'Local Map':           { effect: 'Reveals adjacent tile types',      apply: p => p },
   // Event drops
   'Health Potion':       { effect: 'Heals 50% Max HP', usable: true,
                            apply: p => ({ ...p, hp: Math.min(p.max_hp, p.hp + Math.floor(p.max_hp * 0.5)) }) },
@@ -19,14 +21,14 @@ export const ITEM_DEFS = {
   'Dragon Scale Shield': { effect: '+4 DEF',             apply: p => ({ ...p, defense: p.defense + 4 }) },
   'Dragon Tooth Sword':  { effect: '+4 ATK',             apply: p => ({ ...p, attack: p.attack + 4 }) },
   // Blessings
-  'Blessing of Strength':  { effect: '+2 ATK',               apply: p => ({ ...p, attack: p.attack + 2 }) },
-  'Blessing of Defense':   { effect: '+2 DEF',               apply: p => ({ ...p, defense: p.defense + 2 }) },
-  'Blessing of Vitality':  { effect: '+10 Max HP, +10 HP',   apply: p => ({ ...p, max_hp: p.max_hp + 10, hp: p.hp + 10 }) },
-  'Blessing of Endurance': { effect: '+1 AP',                apply: p => ({ ...p, action_points: p.action_points + 1 }) },
+  'Blessing of Strength':  { effect: '+2 ATK',             apply: p => ({ ...p, attack: p.attack + 2 }) },
+  'Blessing of Defense':   { effect: '+2 DEF',             apply: p => ({ ...p, defense: p.defense + 2 }) },
+  'Blessing of Vitality':  { effect: '+10 Max HP, +10 HP', apply: p => ({ ...p, max_hp: p.max_hp + 10, hp: p.hp + 10 }) },
+  'Blessing of Endurance': { effect: '+1 AP',              apply: p => ({ ...p, action_points: p.action_points + 1 }) },
   // Curses
-  'Curse of Weakness':     { effect: '-2 ATK',               apply: p => ({ ...p, attack: Math.max(1, p.attack - 2) }) },
-  'Curse of Frailty':      { effect: '-2 DEF',               apply: p => ({ ...p, defense: Math.max(0, p.defense - 2) }) },
-  'Curse of Misfortune':   { effect: '-10 Max HP, -10 HP',   apply: p => ({ ...p, max_hp: Math.max(10, p.max_hp - 10), hp: Math.max(1, p.hp - 10) }) },
+  'Curse of Weakness':   { effect: '-2 ATK',             apply: p => ({ ...p, attack: Math.max(1, p.attack - 2) }) },
+  'Curse of Frailty':    { effect: '-2 DEF',             apply: p => ({ ...p, defense: Math.max(0, p.defense - 2) }) },
+  'Curse of Misfortune': { effect: '-10 Max HP, -10 HP', apply: p => ({ ...p, max_hp: Math.max(10, p.max_hp - 10), hp: Math.max(1, p.hp - 10) }) },
 }
 
 export const getItemEffect = name => ITEM_DEFS[name]?.effect || ''
@@ -49,4 +51,43 @@ export const applyUseEffect = (player, name) => {
   const newInv = [...player.inventory]
   newInv.splice(idx, 1)
   return def.apply({ ...player, inventory: newInv })
+}
+
+// Returns a Set of "x,y" keys whose tile types are revealed to the player.
+// - Town tiles are ALWAYS revealed regardless of items.
+// - dragonRevealedTiles: keys permanently revealed by dragon sighting events.
+// - Seer Stone: reveals all tiles that are currently valid moves (any reachable unvisited tile).
+// - Local Map: reveals all 8 tiles directly adjacent to the player's current position.
+export const getRevealedTiles = (inventory, position, validMoves, visited, grid, GRID_SIZE, dragonRevealedTiles = []) => {
+  const revealed = new Set()
+
+  // Towns are always visible on the map
+  Object.entries(grid).forEach(([key, type]) => {
+    if (type === 'town') revealed.add(key)
+  })
+
+  // Dragon sighting permanently reveals tiles
+  dragonRevealedTiles.forEach(key => revealed.add(key))
+
+  const hasSeerStone = inventory.includes('Seer Stone')
+  const hasLocalMap  = inventory.includes('Local Map')
+
+  if (hasSeerStone) {
+    validMoves.forEach(m => revealed.add(`${m.x},${m.y}`))
+  }
+
+  if (hasLocalMap) {
+    const { x, y } = position
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        if (dx === 0 && dy === 0) continue
+        const nx = x + dx, ny = y + dy
+        if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
+          revealed.add(`${nx},${ny}`)
+        }
+      }
+    }
+  }
+
+  return revealed
 }
