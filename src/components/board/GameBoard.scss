@@ -15,13 +15,15 @@
   overflow: hidden;
 }
 
-/* Square responsive board area */
+/* Square responsive board area fit to both width and remaining hieght*/
 .boardFrame {
-  width: min(94vw, 640px);
+  width: min(94vw, 640px, 70vh);
   aspect-ratio: 1 / 1;
+
   margin: 0 auto;
   overflow: hidden;
   border-radius: 12px;
+}
 
   border: 1px solid rgba(255, 255, 255, 0.10);
   background: rgba(0, 0, 0, 0.12);
