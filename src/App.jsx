@@ -37,26 +37,25 @@ export default function App() {
     );
   }
 
-return (
-  <div className="app">
-    <Header />
-    <Notification />
+  return (
+    <div className="app">
+      <Header />
+      <Notification />
 
-    <main className="mainRow">
-      <aside className="leftPanel">
-        <StatsPanel />
-      </aside>
+      {/* Two-column layout container (optional — add CSS for this) */}
+      <main className="mainRow">
+        <aside className="leftPanel">
+          <StatsPanel />
+        </aside>
 
-      <section className="rightPanel">
-        <GameBoard />
-      </section>
-    </main>
+        <section className="rightPanel">
+          <GameBoard />
+        </section>
+      </main>
 
-    <InventoryBar />
+      <InventoryBar />
 
-    {/* overlays unchanged */}
-  </div>
-);
+      {/* Overlays */}
       {screen === 'combat' && (
         <div className="overlay">
           <div className="overlay-box">
@@ -89,8 +88,7 @@ return (
         </div>
       )}
 
-     
-       {screen === 'exploring' && pendingWandererOffer && (
+      {screen === 'exploring' && pendingWandererOffer && (
         <div className="overlay">
           <div className="overlay-box">
             <WandererOffer />
@@ -100,4 +98,3 @@ return (
     </div>
   );
 }
-
