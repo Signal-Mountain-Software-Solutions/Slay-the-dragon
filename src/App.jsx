@@ -89,7 +89,8 @@ return (
         </div>
       )}
 
-      {screen === 'exploring' && pendingWandererOffer && (
+     
+       {screen === 'exploring' && pendingWandererOffer && (
         <div className="overlay">
           <div className="overlay-box">
             <WandererOffer />
@@ -99,3 +100,4 @@ return (
     </div>
   );
 }
+
