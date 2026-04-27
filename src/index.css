@@ -15,48 +15,61 @@
 }
 
 
-/* Two-column main content area */
+/* === MAIN GAME LAYOUT === */
 .mainRow {
   flex: 1 1 auto;
-  min-height: 0;           /* critical for nested flex scrolling */
+  min-height: 0;
   display: grid;
-  gap: 12px;
-  padding: 12px 14px;
+  gap: 10px;
+  padding: 10px;
   overflow: hidden;
 
- 
-  /* Mobile-first: two columns */
-  grid-template-columns: minmax(210px, 38%) 1fr;
-  align-items: stretch;
+  /* Mobile-first: board on top, stats on bottom */
+  grid-template-areas:
+    "board"
+    "stats";
+
+  /* Board gets priority */
+  grid-template-rows: 1fr auto;
 }
 
-/* Very small phones: stack (only if needed) */
-@media (max-width: 360px) {
-  .mainRow {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* Desktop/tablet: two columns */
+/* Desktop/tablet: stats left, board right */
 @media (min-width: 900px) {
   .mainRow {
-    grid-template-columns: 320px 1fr;  /* left fixed-ish, right flexible */
-    align-items: stretch;
+    grid-template-areas: "stats board";
+    grid-template-columns: 320px 1fr;
+    grid-template-rows: 1fr;
+    padding: 12px 14px;
   }
 }
 
 .leftPanel {
+  grid-area: stats;
   min-height: 0;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
 
 .rightPanel {
+  grid-area: board;
   min-height: 0;
   overflow: hidden;
   display: flex;
+  justify-content: center;
+  align-items: center;
 }
+
+/* Mobile: stats panel becomes a bottom drawer */
+@media (max-width: 899px) {
+  .leftPanel {
+    max-height: 34vh;
+    overflow-y: auto;
+    border-top: 1px solid rgba(212,160,23,0.25);
+  }
+}
+
+
+
 
 html, body, #root { height: 100%; }
 
