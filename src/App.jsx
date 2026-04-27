@@ -6,7 +6,7 @@ import StatsPanel from './components/hud/StatsPanel';
 import InventoryBar from './components/hud/InventoryBar';
 import Notification from './components/hud/Notification';
 
-import GameBoard from './components/board/GameBoard.jsx';
+import GameBoard from './components/board/GameBoard';
 import CombatScreen from './components/combat/CombatScreen';
 import TownScreen from './components/town/TownScreen';
 import { VictoryScreen, GameOverScreen } from './components/screens/EndScreens';
@@ -19,10 +19,12 @@ export default function App() {
   const returnToDifficulty = useGameStore(s => s.returnToDifficulty);
   const pendingWandererOffer = useGameStore(s => s.pendingWandererOffer);
 
+  // On first load: if no grid exists yet, go to difficulty screen
   useEffect(() => {
     if (!grid || Object.keys(grid).length === 0) returnToDifficulty();
-  }, []); // only on mount
+  }, []); // mount only
 
+  // Difficulty screen shown as a full-screen overlay before game starts
   if (screen === 'difficulty') {
     return (
       <div className="app">
