@@ -6,7 +6,7 @@ import StatsPanel from './components/hud/StatsPanel';
 import InventoryBar from './components/hud/InventoryBar';
 import Notification from './components/hud/Notification';
 
-import GameBoard from './components/board/GameBoard';
+import GameBoard from './components/board/GameBoard.jsx';
 import CombatScreen from './components/combat/CombatScreen';
 import TownScreen from './components/town/TownScreen';
 import { VictoryScreen, GameOverScreen } from './components/screens/EndScreens';
