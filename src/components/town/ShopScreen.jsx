@@ -7,10 +7,11 @@ export default function ShopScreen() {
   const setTownScreen = useGameStore(s => s.setTownScreen)
 
   const items = [
-    { label: 'Health Potion', desc: 'Restores 50% of max HP (use from inventory)', cost: 50,  action: () => buyItem('Health Potion', 50) },
-    { label: 'Strength Potion', desc: '+2 ATK for one battle (use from inventory)', cost: 100, action: () => buyItem('Strength Potion', 100) },
-    { label: 'Sharpening Stone', desc: 'Permanent +2 Attack',   cost: 150, action: () => buyStat('attack',  2, 150, 'Sharpening Stone') },
-    { label: 'Metal Shield',     desc: 'Permanent +2 Defense',  cost: 150, action: () => buyStat('defense', 2, 150, 'Metal Shield') },
+    { label: 'Health Potion',    desc: 'Restores 50% of max HP (use from inventory)',  cost: 50,  action: () => buyItem('Health Potion', 50) },
+    { label: 'Strength Potion',  desc: '+2 ATK for one battle (use from inventory)',   cost: 100, action: () => buyItem('Strength Potion', 100) },
+    { label: 'Local Map',        desc: 'Reveals tile types for all adjacent squares',  cost: 100, action: () => buyItem('Local Map', 100) },
+    { label: 'Sharpening Stone', desc: 'Permanent +2 Attack',                          cost: 150, action: () => buyStat('attack',  2, 150, 'Sharpening Stone') },
+    { label: 'Metal Shield',     desc: 'Permanent +2 Defense',                         cost: 150, action: () => buyStat('defense', 2, 150, 'Metal Shield') },
   ]
 
   return (

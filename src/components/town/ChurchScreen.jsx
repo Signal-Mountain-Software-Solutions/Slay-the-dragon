@@ -1,13 +1,24 @@
 import { useEffect } from 'react'
 import useGameStore from '../../store/gameStore'
 import { getItemEffect } from '../../constants/items'
+import CultistChurchScreen from './CultistChurchScreen'
+import NecromancerAttackScreen from './NecromancerAttackScreen'
 
 export default function ChurchScreen() {
-  const pendingBlessing    = useGameStore(s => s.pendingBlessing)
-  const setPendingBlessing = useGameStore(s => s.setPendingBlessing)
-  const acceptBlessing     = useGameStore(s => s.acceptBlessing)
-  const setTownScreen      = useGameStore(s => s.setTownScreen)
+  const pendingBlessing         = useGameStore(s => s.pendingBlessing)
+  const pendingCultistChurch    = useGameStore(s => s.pendingCultistChurch)
+  const pendingNecromancerAttack = useGameStore(s => s.pendingNecromancerAttack)
+  const setPendingBlessing      = useGameStore(s => s.setPendingBlessing)
+  const acceptBlessing          = useGameStore(s => s.acceptBlessing)
+  const setTownScreen           = useGameStore(s => s.setTownScreen)
 
+  // Cultist church — no choice of blessing
+  if (pendingCultistChurch) return <CultistChurchScreen />
+
+  // Necromancer attack — no blessing, fight or flee
+  if (pendingNecromancerAttack) return <NecromancerAttackScreen />
+
+  // Normal church
   useEffect(() => {
     if (!pendingBlessing) setPendingBlessing()
   }, [])
