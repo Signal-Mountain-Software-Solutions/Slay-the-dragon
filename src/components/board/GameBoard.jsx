@@ -4,9 +4,7 @@ import useGameStore from '../../store/gameStore';
 import { TERRAIN_ICONS, GRID_SIZE } from '../../constants/enemies';
 import { getValidMoves } from '../../logic/game';
 import { getRevealedTiles } from '../../constants/items';
-
-// If you created a dedicated SCSS file for the board, import it here:
-// import './GameBoard.scss';
+import './GameBoard.scss';
 
 export default function GameBoard() {
   const position = useGameStore((s) => s.position);
