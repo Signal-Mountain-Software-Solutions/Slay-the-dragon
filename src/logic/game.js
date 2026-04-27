@@ -22,7 +22,7 @@ export const gainExp = (player, amount) => {
       attack: p.attack + 2,
       defense: p.defense + 2,
       max_hp: p.max_hp + 5,
-      hp: p.max_hp + 5,
+      hp: p.hp + 5,
       action_points: p.action_points + 0.25,
       exp_to_level: p.exp_to_level + 25,
     }
@@ -41,7 +41,7 @@ export const gainExp = (player, amount) => {
 
 // ── GRID ────────────────────────────────────────────────────
 export const generateGrid = () => {
-  const weights = { fight: 55, hard_fight: 5, event: 25, town: 5, camp: 5, treasure: 3, curse: 2 }
+  const weights = { fight: 48, hard_fight: 5, event: 20, town: 5, camp: 5, treasure: 3, curse: 2, wilderness: 12 }
   const pool = []
   Object.entries(weights).forEach(([t, c]) => { for (let i = 0; i < c; i++) pool.push(t) })
 
@@ -53,7 +53,46 @@ export const generateGrid = () => {
       else grid[`${x},${y}`] = pool[Math.floor(Math.random() * pool.length)]
     }
   }
-  return grid
+
+  // Pick one random town tile to secretly be a cultist church
+  const townKeys = Object.entries(grid)
+    .filter(([, v]) => v === 'town')
+    .map(([k]) => k)
+  const cultistChurchKey = townKeys.length > 0
+    ? townKeys[Math.floor(Math.random() * townKeys.length)]
+    : null
+
+  return { grid, cultistChurchKey }
+}
+
+// BFS: can we reach (GRID_SIZE-1, GRID_SIZE-1) from `from` without stepping on `visited`?
+const canReachDragon = (from, visited) => {
+  const goal = `${GRID_SIZE - 1},${GRID_SIZE - 1}`
+  if (from.x === GRID_SIZE - 1 && from.y === GRID_SIZE - 1) return true
+
+  const queue = [from]
+  const seen = new Set([`${from.x},${from.y}`])
+
+  while (queue.length > 0) {
+    const { x, y } = queue.shift()
+    const neighbors = [
+      { x: x-1, y: y+1 }, { x, y: y+1 }, { x: x+1, y: y+1 },
+      { x: x-1, y },                       { x: x+1, y },
+      { x: x-1, y: y-1 }, { x, y: y-1 }, { x: x+1, y: y-1 },
+    ]
+    for (const n of neighbors) {
+      const key = `${n.x},${n.y}`
+      if (n.x < 0 || n.x >= GRID_SIZE || n.y < 0 || n.y >= GRID_SIZE) continue
+      if (seen.has(key)) continue
+      if (key === goal) return true
+      // Can walk through unvisited squares only
+      if (!visited.has(key)) {
+        seen.add(key)
+        queue.push(n)
+      }
+    }
+  }
+  return false
 }
 
 export const getValidMoves = (position, visited) => {
@@ -63,15 +102,38 @@ export const getValidMoves = (position, visited) => {
     { x: x-1, y },                       { x: x+1, y },
     { x: x-1, y: y-1 }, { x, y: y-1 }, { x: x+1, y: y-1 },
   ]
-  return neighbors.filter(p =>
-    p.x >= 0 && p.x < GRID_SIZE &&
-    p.y >= 0 && p.y < GRID_SIZE &&
-    !visited.has(`${p.x},${p.y}`)
-  )
+
+  return neighbors.filter(move => {
+    if (move.x < 0 || move.x >= GRID_SIZE) return false
+    if (move.y < 0 || move.y >= GRID_SIZE) return false
+    if (visited.has(`${move.x},${move.y}`)) return false
+
+    // Simulate visiting this square and check dragon is still reachable
+    const newVisited = new Set([...visited, `${move.x},${move.y}`])
+    return canReachDragon(move, newVisited)
+  })
 }
 
 // ── DRAGON ──────────────────────────────────────────────────
-export const createDragon = () => ({ ...DRAGON_BASE, minions: [] })
+export const createDragon = (diffMult = 1) => {
+  const m = diffMult
+  return {
+    ...DRAGON_BASE,
+    attack:        Math.floor(DRAGON_BASE.attack    * m),
+    defense:       Math.floor(DRAGON_BASE.defense   * m),
+    max_hp:        Math.floor(DRAGON_BASE.max_hp    * m),
+    hp:            Math.floor(DRAGON_BASE.max_hp    * m),
+    base_attack:   Math.floor(DRAGON_BASE.base_attack  * m),
+    base_defense:  Math.floor(DRAGON_BASE.base_defense * m),
+    base_hp:       Math.floor(DRAGON_BASE.base_hp      * m),
+    increment: {
+      attack:  Math.floor(DRAGON_BASE.increment.attack  * m),
+      defense: Math.floor(DRAGON_BASE.increment.defense * m),
+      hp:      Math.floor(DRAGON_BASE.increment.hp      * m),
+    },
+    minions: [],
+  }
+}
 
 export const scaleDragon = (dragon, turn) => {
   const newPower = Math.floor(turn / 5)
@@ -92,15 +154,16 @@ export const mkEnemy = (name, atk, def, hp) => ({
   name, attack: atk, defense: def, max_hp: hp, hp, minions: [],
 })
 
-export const getEncounterByTier = (tier, type) => {
-  const mult = type === 'hard_fight' ? 1.5 : 1
+export const getEncounterByTier = (tier, type, diffMult = 1) => {
+  const typeMult = type === 'hard_fight' ? 1.5 : 1
+  const totalMult = typeMult * diffMult
   const list = ENCOUNTER_TIERS[Math.min(tier, 4)]
   const enc = list[Math.floor(Math.random() * list.length)]
   return {
     ...enc,
-    atk: Math.floor(enc.atk * mult),
-    def: Math.floor(enc.def * mult),
-    hp:  Math.floor(enc.hp  * mult),
+    atk: Math.floor(enc.atk * totalMult),
+    def: Math.floor(enc.def * totalMult),
+    hp:  Math.floor(enc.hp  * totalMult),
     count: enc.count ? enc.count() : 1,
   }
 }
@@ -269,26 +332,54 @@ export const resolveEnemyTurn = ({ player, enemies, battleBuffs, blockBonus, pla
 // ── ENCOUNTER HANDLERS ───────────────────────────────────────
 export const handleTreasure = (player, tier) => {
   const gold = Math.floor(Math.random() * 201) + 100 + tier * 50
-  const items = ['Rare Gem', 'Ancient Artifact', 'Magic Scroll', 'Enchanted Ring']
+  const items = ['Rare Gem', 'Ancient Artifact', 'Magic Scroll', 'Enchanted Ring', 'Seer Stone', 'Local Map']
   const item = items[Math.floor(Math.random() * items.length)]
   const newPlayer = applyPickupEffect(
     { ...player, gold: player.gold + gold, inventory: [...player.inventory, item] },
     item
   )
-  return { player: newPlayer, gold, item }
+  // 10% cursed treasure, 15% ambush (resolved by store)
+  const cursed = Math.random() < 0.10
+  const ambush = Math.random() < 0.15
+  return { player: newPlayer, gold, item, cursed, ambush }
 }
 
 export const handleEvent = (player) => {
+  const roll = Math.random()
+
+  // 5% trap — lose HP or lose gold
+  if (roll < 0.05) {
+    if (Math.random() < 0.5) {
+      const dmg = Math.floor(player.max_hp * 0.2)
+      return { player: { ...player, hp: Math.max(1, player.hp - dmg) }, ev: 'trap', trapType: 'damage', trapDmg: dmg, wandererOffer: false, item: null, blessing: null }
+    } else {
+      const lost = Math.floor(player.gold * 0.05)
+      return { player: { ...player, gold: Math.max(0, player.gold - lost) }, ev: 'trap', trapType: 'gold', trapGold: lost, wandererOffer: false, item: null, blessing: null }
+    }
+  }
+
+  // 5% cultists — apply a curse
+  if (roll < 0.10) {
+    const curse = ['Curse of Weakness', 'Curse of Frailty', 'Curse of Misfortune'][Math.floor(Math.random() * 3)]
+    const newPlayer = applyPickupEffect({ ...player, curses: [...player.curses, curse] }, curse)
+    return { player: newPlayer, ev: 'cultists', curse, wandererOffer: false, item: null, blessing: null }
+  }
+
+  // 10% wanderer offering Seer Stone
+  if (roll < 0.20) {
+    return { player, ev: 'strange wanderer', wandererOffer: true, item: null, blessing: null }
+  }
+
   const events = ['mysterious shrine', 'traveling merchant', 'ancient tome']
   const ev = events[Math.floor(Math.random() * events.length)]
   if (Math.random() < 0.5) {
     const item = ['Health Potion', 'Strength Ring', 'Lucky Charm'][Math.floor(Math.random() * 3)]
     const newPlayer = applyPickupEffect({ ...player, inventory: [...player.inventory, item] }, item)
-    return { player: newPlayer, ev, item, blessing: null }
+    return { player: newPlayer, ev, item, blessing: null, wandererOffer: false }
   } else {
     const blessing = ['Blessing of Strength', 'Blessing of Defense'][Math.floor(Math.random() * 2)]
     const newPlayer = applyPickupEffect({ ...player, blessings: [...player.blessings, blessing] }, blessing)
-    return { player: newPlayer, ev, item: null, blessing }
+    return { player: newPlayer, ev, item: null, blessing, wandererOffer: false }
   }
 }
 
@@ -296,6 +387,44 @@ export const handleCurse = (player) => {
   const curse = ['Curse of Weakness', 'Curse of Frailty', 'Curse of Misfortune'][Math.floor(Math.random() * 3)]
   const newPlayer = applyPickupEffect({ ...player, curses: [...player.curses, curse] }, curse)
   return { player: newPlayer, curse }
+}
+
+// ── WILDERNESS ───────────────────────────────────────────────
+// Returns one of five outcomes — the store handles the side effects
+// (starting fights, placing quests, revealing tiles)
+export const rollWildernessOutcome = () => {
+  const roll = Math.random()
+  if (roll < 0.20) return 'berries'      // 20% — heal
+  if (roll < 0.40) return 'ambush'       // 20% — fight
+  if (roll < 0.58) return 'traveler'     // 18% — quest
+  if (roll < 0.78) return 'brambles'     // 20% — damage
+  return 'dragon_sighting'               // 22% — reveal surrounding tiles
+}
+
+export const applyWildernessBerries = (player) => {
+  const heal = Math.floor(player.max_hp * 0.25)
+  return { player: { ...player, hp: Math.min(player.max_hp, player.hp + heal) }, heal }
+}
+
+export const applyWildernessBrambles = (player) => {
+  const dmg = Math.floor(player.max_hp * 0.15)
+  return { player: { ...player, hp: Math.max(1, player.hp - dmg) }, dmg }
+}
+
+// Returns the set of keys that the dragon sighting reveals (3-radius ring around pos)
+export const dragonSightingReveal = (pos, visited, grid, GRID_SIZE_ARG) => {
+  const size = GRID_SIZE_ARG || GRID_SIZE
+  const revealed = []
+  for (let dx = -3; dx <= 3; dx++) {
+    for (let dy = -3; dy <= 3; dy++) {
+      if (dx === 0 && dy === 0) continue
+      const nx = pos.x + dx, ny = pos.y + dy
+      if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue
+      const key = `${nx},${ny}`
+      if (!visited.has(key)) revealed.push(key)
+    }
+  }
+  return revealed
 }
 
 // ── QUESTS ──────────────────────────────────────────────────
