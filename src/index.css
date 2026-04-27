@@ -16,6 +16,49 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+.header-bar {
+  position: relative;
+  z-index: 5; /* above the body::before background layer */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(212,160,23,0.15);
+  background: rgba(20, 15, 8, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+.header-left {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.header-title {
+  margin: 0;
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1rem;
+  letter-spacing: 1px;
+}
+
+.header-quest,
+.header-dragon,
+.header-turn {
+  font-family: 'Cinzel', serif;
+  font-size: 0.75rem;
+  opacity: 0.95;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
 
 body {
   font-family: 'IM Fell English', serif;
