@@ -1,0 +1,621 @@
+/* =========================================
+   Global baseline for mobile stability
+   ========================================= */
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+/* Dynamic viewport height fix (mobile address bar issue) */
+:root {
+  --app-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
+}
+
+/* Root wrapper for your entire game */
+.app {
+  height: var(--app-height);
+  width: 100vw;
+  overflow: hidden;
+
+  /* iPhone notch/home bar safe areas */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+
+  /* Helps touch feel game-like */
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Main layout for HUD + board + bottom bar */
+.game-shell {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* prevents inner overflow creating page scroll */
+}
+
+/* Where the board/canvas should live */
+.game-stage {
+  flex: 1 1 auto;
+  min-height: 0; /* critical for flex children to scroll/fit properly */
+  overflow: hidden; /* set to auto if you intentionally want scrolling */
+  display: flex;
+}
+
+/* Full-screen overlays for combat/town/victory/etc. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: auto; /* overlays can scroll if content exceeds height */
+  -webkit-overflow-scrolling: touch;
+
+  /* same safe areas so modals aren’t hidden behind notch */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+
+  /* Optional: dim background */
+  background: rgba(0, 0, 0, 0.4);
+}
+
+
+
+/* =========================================
+   Global mobile safety + layout stabilization
+   ========================================= */
+
+/* Helps prevent common "cut off" / overflow issues on mobile */
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+}
+
+/* Prevent horizontal scroll from transforms/absolute elements */
+body {
+  overflow-x: hidden;
+}
+
+/* Optional: if you have a root wrapper in App.tsx (recommended)
+   add className="app" to it to enable safe-area padding on iPhone */
+.app {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Optional: dynamic viewport height helper for mobile browsers.
+   If you want to use it, apply height: var(--app-height) to your top container. */
+:root {
+  --app-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --app-height: 100dvh;
+  }
+}
+
+/* =========================================
+   Your original styles (converted to SCSS)
+   ========================================= */
+
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
+
+  &:hover {
+    border-color: var(--accent-border);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.hero {
+  position: relative;
+  max-width: 100%;
+
+  /* Mobile overflow fix: transforms + abs positioned items can cause horizontal scroll */
+  overflow: hidden;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+
+  /* Original intent: centered layout */
+  place-items: center;
+  flex-grow: 1;
+
+  /* Mobile fix: allow content to grow without being clipped */
+  min-height: 100%;
+
+  /* Desktop/tablet default centering */
+  justify-content: center;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+
+  /* Stronger mobile fix: don't vertically center if it might overflow */
+  @media (max-width: 768px) {
+    justify-content: flex-start;
+    padding: 24px 16px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  > div {
+    flex: 1 1 0;
+    padding: 32px;
+
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  /* Mobile overflow/wrapping fix */
+  flex-wrap: wrap;
+  max-width: 100%;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
+
+/* ----- GameBoard layout ----- */
+.gameboard {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+/* A responsive square frame that fits the viewport */
+.boardFrame {
+  /* Board should fit within available height/width */
+  width: min(94vw, 640px);
+  aspect-ratio: 1 / 1;
+
+  /* Center it */
+  margin: 0 auto;
+
+  /* Prevent transforms/children from causing horizontal scroll */
+  overflow: hidden;
+
+  /* Give it a little breathing room */
+  border-radius: 12px;
+}
+
+/* Grid that scales automatically based on GRID_SIZE */
+.boardGrid {
+  height: 100%;
+  width: 100%;
+  display: grid;
+
+  /* Use CSS variable so it works for any GRID_SIZE */
+  grid-template-columns: repeat(var(--grid-size), 1fr);
+  grid-template-rows: repeat(var(--grid-size), 1fr);
+
+  gap: clamp(2px, 0.8vw, 6px);
+  padding: clamp(4px, 1vw, 10px);
+
+  /* Optional: background */
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure row wrappers don't break the grid.
+   If your "rows" are divs, make them contents so children become grid items. */
+.boardGrid > .row {
+  display: contents;
+}
+
+/* If your rows don’t have a class, you can target them by structure:
+   boardGrid's direct children are your rows in current rendering. */
+.boardGrid > * {
+  display: contents;
+}
+
+/* Panels under the grid */
+.boardPanels {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+
+  /* On desktop, show log + moves side-by-side; on mobile stack */
+  grid-template-columns: 1fr;
+
+  @media (min-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Make panels usable without shrinking the board */
+.logPanel,
+.movesPanel {
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 10px;
+  background: rgba(0,0,0,0.25);
+}
+
+.movesTitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: clamp(14px, 3.5vw, 16px);
+}
+
+.movesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.moveBtn {
+  font-size: clamp(13px, 3.4vw, 15px);
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color: inherit;
+
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.noMoves {
+  opacity: 0.85;
+}
+
+/* =========================================================
+   GameBoard layout (Recommended: Board + Panels)
+   Fixes "tiny UI/scaling" on mobile by giving the board
+   a responsive square and pushing other UI into panels.
+   ========================================================= */
+
+.gameboard {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+/* ---------------------------
+   Responsive square board
+   --------------------------- */
+.boardFrame {
+  /* Use most of the phone width; cap for desktop */
+  width: min(94vw, 640px);
+
+  /* Keep the board square so cells stay square */
+  aspect-ratio: 1 / 1;
+
+  /* Center horizontally */
+  margin: 0 auto;
+
+  /* Protect against any child overflow */
+  overflow: hidden;
+
+  border-radius: 12px;
+
+  /* Optional: subtle border/background */
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* The actual grid area */
+.boardGrid {
+  height: 100%;
+  width: 100%;
+  display: grid;
+
+  /* Let GRID_SIZE drive the layout via CSS var */
+  grid-template-columns: repeat(var(--grid-size), 1fr);
+  grid-template-rows: repeat(var(--grid-size), 1fr);
+
+  gap: clamp(2px, 0.8vw, 6px);
+  padding: clamp(4px, 1vw, 10px);
+
+  /* If your JSX renders row wrappers (it does),
+     flatten them so the cells become grid items. */
+  > * {
+    display: contents;
+  }
+}
+
+/* ---------------------------
+   Cells (matches GridCell.jsx)
+   --------------------------- */
+.cell {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+
+  border-radius: clamp(6px, 1.2vw, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.06);
+
+  /* Responsive icon/text sizing */
+  font-size: clamp(14px, 3.8vw, 24px);
+  line-height: 1;
+
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* State classes you already assign in GridCell.jsx */
+.cell-current {
+  border-color: rgba(80, 200, 255, 0.65);
+  background: rgba(80, 200, 255, 0.18);
+}
+
+.cell-moveable {
+  border-color: rgba(120, 255, 170, 0.55);
+  background: rgba(120, 255, 170, 0.12);
+  cursor: pointer;
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.cell-visited {
+  opacity: 0.75;
+}
+
+.cell-unknown {
+  opacity: 0.55;
+}
+
+.cell-quest {
+  border-color: rgba(255, 210, 120, 0.65);
+  background: rgba(255, 210, 120, 0.14);
+}
+
+.cell-dragon {
+  border-color: rgba(255, 80, 80, 0.65);
+  background: rgba(255, 80, 80, 0.14);
+}
+
+/* Improve focus accessibility for keyboard users */
+.cell:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+/* ---------------------------
+   Panels (Log + Moves)
+   Prevents squeezing the board
+   --------------------------- */
+.boardPanels {
+  flex: 1 1 auto;
+  min-height: 0;
+
+  display: grid;
+  gap: 10px;
+
+  /* Mobile: stack panels */
+  grid-template-columns: 1fr;
+
+  /* Desktop: two columns */
+  @media (min-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.logPanel,
+.movesPanel {
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 12px;
+  padding: 10px;
+
+  background: rgba(0, 0, 0, 0.22);
+}
+
+/* Moves area */
+.movesTitle {
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: clamp(14px, 3.5vw, 16px);
+}
+
+.movesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.moveBtn {
+  font-size: clamp(13px, 3.4vw, 15px);
+  padding: 8px 10px;
+
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+
+  cursor: pointer;
+  touch-action: manipulation;
