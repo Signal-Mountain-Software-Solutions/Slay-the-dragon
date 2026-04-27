@@ -4,7 +4,6 @@
 @tailwind utilities;
 
 
-
 :root {
   --blood: #8B1A1A;
   --ember: #C8411B;
@@ -13,6 +12,62 @@
   --parchment: #E8D5A3;
   --ink: #1A1208;
   --mist: #8A7A6A;
+}
+
+/* Ensure app fills viewport */ display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+/* Two-column main content area */
+.mainRow {
+  flex: 1 1 auto;
+  min-height: 0;           /* critical for nested flex scrolling */
+  display: grid;
+  gap: 12px;
+  padding: 12px 14px;
+  overflow: hidden;
+
+  /* Mobile: stack */
+  grid-template-columns: 1fr;
+}
+
+/* Desktop/tablet: two columns */
+@media (min-width: 900px) {
+  .mainRow {
+    grid-template-columns: 320px 1fr;  /* left fixed-ish, right flexible */
+    align-items: stretch;
+  }
+}
+
+.leftPanel {
+  min-height: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rightPanel {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+``
+html, body, #root { height: 100%; }
+
+.app {
+  height: 100vh;
+  width: 100vw;
+
+
+/* ---- Stats Panel (left column) ---- */
+.statsPanel {
+  padding: 10px 12px;
+  border: 1px solid rgba(212,160,23,0.15);
+  border-radius: 8px;
+  background: rgba(20,15,8,0.55);
+  backdrop-filter: blur(4px);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
