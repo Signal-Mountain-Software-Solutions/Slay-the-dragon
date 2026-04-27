@@ -60,6 +60,59 @@
   flex-shrink: 0;
 }
 
+/* --- Game Log container --- */
+.gameLog {
+  max-height: 160px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* On small screens, allow a bit more height */
+@media (max-width: 520px) {
+  .gameLog {
+    max-height: 200px;
+  }
+}
+
+/* --- Inventory bar layout --- */
+.inventoryBar {
+  position: relative;
+  z-index: 5;
+  padding: 8px 14px 12px;
+}
+
+.inventoryHeader {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(12px, 3.6vw, 14px);
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+
+.inventoryHint {
+  font-size: clamp(11px, 3.3vw, 13px);
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+
+.inventoryRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.inventoryEmpty {
+  font-size: clamp(12px, 3.4vw, 14px);
+  opacity: 0.75;
+}
+
+/* Make chip buttons behave well inside scroll row */
+.inv-chip {
+  flex: 0 0 auto;
+}
+
 body {
   font-family: 'IM Fell English', serif;
   background: var(--ink);
