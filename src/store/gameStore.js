@@ -146,8 +146,7 @@ const useGameStore = create(
             const isDeep = pos.x > 4 || pos.y > 4
             const necromancerRoll = isDeep && Math.random() < 0.10
 
-            const newPlayer = { ...s3.player, hp: s3.player.max_hp }
-            set({
+             set({
               player: newPlayer,
               screen: 'town',
               townScreen: null,
@@ -155,7 +154,7 @@ const useGameStore = create(
               pendingCultistChurch: isCultist,
               pendingNecromancerAttack: !isCultist && necromancerRoll,
             })
-            get().addLog('🏘 You arrive at a town. HP fully restored!', 'log-victory')
+            get().addLog('🏘 You arrive at a town. , 'log-victory')
             if (isCultist) get().addLog('Something feels wrong about this place...', 'log-danger')
             else if (necromancerRoll) get().addLog('The streets are unnervingly quiet...', 'log-danger')
             break
