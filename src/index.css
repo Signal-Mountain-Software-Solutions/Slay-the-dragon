@@ -60,6 +60,25 @@
   flex-shrink: 0;
 }
 
+html, body, #root { height: 100%; }
+
+.app {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.game-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+
 /* --- Game Log container --- */
 .gameLog {
   max-height: 160px;
