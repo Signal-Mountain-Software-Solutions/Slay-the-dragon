@@ -19,12 +19,10 @@ export default function App() {
   const returnToDifficulty = useGameStore(s => s.returnToDifficulty);
   const pendingWandererOffer = useGameStore(s => s.pendingWandererOffer);
 
-  // On first load: if no grid exists yet, go to difficulty screen
   useEffect(() => {
     if (!grid || Object.keys(grid).length === 0) returnToDifficulty();
-  }, []); // intentionally only on mount
+  }, []); // only on mount
 
-  // Difficulty screen shown as a full-screen overlay before game starts
   if (screen === 'difficulty') {
     return (
       <div className="app">
@@ -43,9 +41,9 @@ export default function App() {
       <StatsPanel />
       <Notification />
 
-      <div className="game-stage">
+      <main className="game-stage">
         <GameBoard />
-      </div>
+      </main>
 
       <InventoryBar />
 
