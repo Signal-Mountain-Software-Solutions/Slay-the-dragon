@@ -37,18 +37,26 @@ export default function App() {
     );
   }
 
-  return (
-    <div className="app">
-      <Header />
-      <StatsPanel />
-      <Notification />
+return (
+  <div className="app">
+    <Header />
+    <Notification />
 
-      <main className="game-stage">
+    <main className="mainRow">
+      <aside className="leftPanel">
+        <StatsPanel />
+      </aside>
+
+      <section className="rightPanel">
         <GameBoard />
-      </main>
+      </section>
+    </main>
 
-      <InventoryBar />
+    <InventoryBar />
 
+    {/* overlays unchanged */}
+  </div>
+);
       {screen === 'combat' && (
         <div className="overlay">
           <div className="overlay-box">
