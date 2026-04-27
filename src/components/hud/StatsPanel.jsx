@@ -23,7 +23,7 @@ export default function StatsPanel() {
           { icon: '💰', label: 'GOLD', val: player.gold },
           { icon: '⚡', label: 'AP', val: Math.floor(player.action_points) },
         ].map(({ icon, label, val }) => (
-          <div key={label} className="statCard">
+          <div className="statCard" key={label}>
             <div className="statCardLabel">{icon} {label}</div>
             <div className="statCardValue">{val}</div>
           </div>
@@ -39,8 +39,8 @@ export default function StatsPanel() {
         <div className="skillsBlock">
           <div className="footerTitle">Skills</div>
           <div className="skillsList">
-            {player.skills.map(s => (
-              <div key={s}>• {s}</div>
+            {player.skills.map(skill => (
+              <div key={skill}>• {skill}</div>
             ))}
           </div>
         </div>
