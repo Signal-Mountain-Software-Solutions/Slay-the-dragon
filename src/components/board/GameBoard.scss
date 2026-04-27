@@ -126,6 +126,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+
+.boardGrid .cell {
+  min-height: 0; /* override global index.css cell min-height */
+}
+
 .cell-current {
   border-color: rgba(80, 200, 255, 0.65);
   background: rgba(80, 200, 255, 0.18);
