@@ -24,8 +24,10 @@
   padding: 12px 14px;
   overflow: hidden;
 
-  /* Mobile: stack */
-  grid-template-columns: 1fr;
+ 
+  /* Mobile-first: two columns */
+  grid-template-columns: minmax(210px, 38%) 1fr;
+  align-items: stretch;
 }
 
 /* Desktop/tablet: two columns */
