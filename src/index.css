@@ -14,12 +14,6 @@
   --mist: #8A7A6A;
 }
 
-/* Ensure app fills viewport */ display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
-}
 
 /* Two-column main content area */
 .mainRow {
@@ -53,22 +47,10 @@
   overflow: hidden;
   display: flex;
 }
-``
+
 html, body, #root { height: 100%; }
 
-.app {
-  height: 100vh;
-  width: 100vw;
 
-
-/* ---- Stats Panel (left column) ---- */
-.statsPanel {
-  padding: 10px 12px;
-  border: 1px solid rgba(212,160,23,0.15);
-  border-radius: 8px;
-  background: rgba(20,15,8,0.55);
-  backdrop-filter: blur(4px);
-}
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -148,6 +130,15 @@ html, body, #root { height: 100%; }
   .gameLog {
     max-height: 200px;
   }
+}
+
+/* ---- Stats Panel (left column) ---- */
+.statsPanel {
+  padding: 10px 12px;
+  border: 1px solid rgba(212,160,23,0.15);
+  border-radius: 8px;
+  background: rgba(20,15,8,0.55);
+  backdrop-filter: blur(4px);
 }
 
 /* --- Inventory bar layout --- */
