@@ -8,7 +8,7 @@ import {
   rollWildernessOutcome, applyWildernessBerries, applyWildernessBrambles, dragonSightingReveal,
 } from '../logic/game'
 import { applyUseEffect, getItemEffect, ITEM_DEFS } from '../constants/items'
-import { BLESSING_NAMES, GRID_SIZE, WILDERNESS_QUEST_TEMPLATES } from '../constants/enemies'
+import { BLESSING_NAMES, GRID_SIZE, WILDERNESS_QUEST_TEMPLATES, DIFFICULTY } from '../constants/enemies'
 
 const INITIAL_COMBAT = {
   enemies: [], selectedTarget: 0,
@@ -31,11 +31,16 @@ const useGameStore = create(
       dragon: createDragon(),
       activeQuest: null,
       townVisited: { shop: false, tavern: false, church: false },
+      cultistChurchKey: null,
+      pendingCultistChurch: false,
+      pendingNecromancerAttack: false,
+      stats: { enemiesKilled: 0, questsCompleted: 0, trapsTriggered: 0 },
+      difficulty: null,
 
       // ── ui ──
       gameLog: [{ msg: 'Welcome to How to Slay a Dragon! Your quest: Defeat the Dragon at (9,9)', cls: 'log-gold' }],
-      screen: 'exploring', // exploring | combat | town | victory | gameover
-      townScreen: null,    // null | shop | tavern | church
+      screen: 'difficulty',
+      townScreen: null,
       notification: null,
       pendingQuestReward: null,
       pendingBlessing: null,
@@ -46,16 +51,23 @@ const useGameStore = create(
       ...INITIAL_COMBAT,
 
       // ── actions ──
-      initGame: () => {
+      initGame: (difficulty = 'easy') => {
+        const { grid, cultistChurchKey } = generateGrid()
+        const diffMult = DIFFICULTY[difficulty]?.enemyMult ?? 1
         set({
           player: createPlayer(),
           position: { x: 0, y: 0 },
           visited: ['0,0'],
           turn: 0,
-          grid: generateGrid(),
-          dragon: createDragon(),
+          grid,
+          cultistChurchKey,
+          dragon: createDragon(diffMult),
           activeQuest: null,
           townVisited: { shop: false, tavern: false, church: false },
+          pendingCultistChurch: false,
+          pendingNecromancerAttack: false,
+          stats: { enemiesKilled: 0, questsCompleted: 0, trapsTriggered: 0 },
+          difficulty,
           gameLog: [{ msg: 'Welcome to How to Slay a Dragon! Your quest: Defeat the Dragon at (9,9)', cls: 'log-gold' }],
           screen: 'exploring',
           townScreen: null,
@@ -118,6 +130,7 @@ const useGameStore = create(
           get().addLog(`⭐ Quest complete: "${desc}"! Earned ${gold} Gold & ${exp} EXP!`, 'log-level')
           if (visionBonus) get().addLog(`🎁 Bonus reward: ${visionBonus}!`, 'log-gold')
           get().showNotification('Quest Complete!')
+          set(s2 => ({ stats: { ...s2.stats, questsCompleted: s2.stats.questsCompleted + 1 } }))
         }
 
         const type = s.grid[key]
@@ -128,28 +141,73 @@ const useGameStore = create(
           case 'hard_fight': get().startFight(type, tier); break
 
           case 'town': {
-            const newPlayer = { ...get().player, hp: get().player.max_hp }
-            set({ player: newPlayer, screen: 'town', townScreen: null, townVisited: { shop: false, tavern: false, church: false } })
+            const s3 = get()
+            const isCultist = s3.cultistChurchKey === key
+            const isDeep = pos.x > 4 || pos.y > 4
+            const necromancerRoll = isDeep && Math.random() < 0.10
+
+            const newPlayer = { ...s3.player, hp: s3.player.max_hp }
+            set({
+              player: newPlayer,
+              screen: 'town',
+              townScreen: null,
+              townVisited: { shop: false, tavern: false, church: false },
+              pendingCultistChurch: isCultist,
+              pendingNecromancerAttack: !isCultist && necromancerRoll,
+            })
             get().addLog('🏘 You arrive at a town. HP fully restored!', 'log-victory')
+            if (isCultist) get().addLog('Something feels wrong about this place...', 'log-danger')
+            else if (necromancerRoll) get().addLog('The streets are unnervingly quiet...', 'log-danger')
             break
           }
           case 'camp': {
             const p = get().player
             const heal = Math.floor(p.max_hp / 2)
-            set({ player: { ...p, hp: Math.min(p.max_hp, p.hp + heal) } })
+            const healed = { ...p, hp: Math.min(p.max_hp, p.hp + heal) }
+            set({ player: healed })
             get().addLog(`🏕 You rest. Restored ${heal} HP!`, 'log-victory')
+            // 15% chance of ambush after healing
+            if (Math.random() < 0.15) {
+              set(s2 => ({ stats: { ...s2.stats, trapsTriggered: s2.stats.trapsTriggered + 1 } }))
+              get().addLog('⚔ Bandits were waiting for you to let your guard down!', 'log-danger')
+              get().startFight('fight', tier)
+            }
             break
           }
           case 'treasure': {
-            const { player, gold, item } = handleTreasure(get().player, tier)
+            const { player, gold, item, cursed, ambush } = handleTreasure(get().player, tier)
             set({ player })
             get().addLog(`💰 Treasure! ${gold} gold and ${item}! (${getItemEffect(item)})`, 'log-gold')
+            if (cursed) {
+              const { player: cp, curse } = handleCurse(get().player)
+              set({ player: cp })
+              set(s2 => ({ stats: { ...s2.stats, trapsTriggered: s2.stats.trapsTriggered + 1 } }))
+              get().addLog(`💀 The chest was cursed! Afflicted: ${curse} (${getItemEffect(curse)})`, 'log-danger')
+            }
+            if (ambush) {
+              set(s2 => ({ stats: { ...s2.stats, trapsTriggered: s2.stats.trapsTriggered + 1 } }))
+              get().addLog('⚔ Guardians burst from the shadows to reclaim the treasure!', 'log-danger')
+              get().startFight('fight', tier)
+            }
             break
           }
           case 'event': {
             const result = handleEvent(get().player)
-            if (result.wandererOffer) {
-              // Wanderer encounter — store it as a pending offer, show via notification
+            if (result.ev === 'trap') {
+              set({ player: result.player })
+              set(s2 => ({ stats: { ...s2.stats, trapsTriggered: s2.stats.trapsTriggered + 1 } }))
+              if (result.trapType === 'damage') {
+                get().addLog(`🪤 EVENT: You spring a hidden trap! Lost ${result.trapDmg} HP!`, 'log-danger')
+                if (result.player.hp <= 0) { set({ screen: 'gameover' }) }
+              } else {
+                get().addLog(`🪤 EVENT: Cutpurses relieve you of ${result.trapGold} Gold while you're distracted!`, 'log-danger')
+              }
+            } else if (result.ev === 'cultists') {
+              set({ player: result.player })
+              set(s2 => ({ stats: { ...s2.stats, trapsTriggered: s2.stats.trapsTriggered + 1 } }))
+              get().addLog(`🕯 EVENT: Cultists ambush you in the night and place a hex upon you!`, 'log-danger')
+              get().addLog(`Afflicted: ${result.curse} (${getItemEffect(result.curse)})`, 'log-danger')
+            } else if (result.wandererOffer) {
               set({ pendingWandererOffer: true })
               get().addLog('📜 EVENT: You meet a strange man in the woods...', '')
               get().addLog('He offers you a mysterious gem that will show you the future for 100 Gold.', 'log-gold')
@@ -206,6 +264,7 @@ const useGameStore = create(
               case 'brambles': {
                 const { player: p, dmg } = applyWildernessBrambles(s2.player)
                 set({ player: p })
+                set(s3 => ({ stats: { ...s3.stats, trapsTriggered: s3.stats.trapsTriggered + 1 } }))
                 get().addLog(`🌿 You stumble into thick brambles. Lost ${dmg} HP forcing your way through.`, 'log-danger')
                 if (p.hp <= 0) { get().endCombat(false) }
                 break
@@ -229,7 +288,8 @@ const useGameStore = create(
       // ── COMBAT ──────────────────────────────────────────────
       startFight: (type, tier) => {
         const s = get()
-        const enc = getEncounterByTier(tier, type)
+        const diffMult = DIFFICULTY[s.difficulty]?.enemyMult ?? 1
+        const enc = getEncounterByTier(tier, type, diffMult)
         const enemies = buildEnemies(enc)
         const exp  = type === 'fight' ? 50 + tier * 25 : 100 + tier * 50
         const gold = type === 'fight' ? 50 + tier * 25 : 100 + tier * 50
@@ -404,6 +464,11 @@ const useGameStore = create(
           get().addLog('✅ Victory!', 'log-victory')
           const s = get()
           const { exp, gold, enemyData } = s.encounterData
+
+          // Count enemies killed this fight
+          const killed = s.enemies.filter(e => e.hp <= 0).length
+          set({ stats: { ...s.stats, enemiesKilled: s.stats.enemiesKilled + killed } })
+
           let p = { ...s.player, gold: s.player.gold + gold }
 
           if (enemyData?.dropItem) {
@@ -506,6 +571,50 @@ const useGameStore = create(
         get().addLog('You decline the wanderer\'s offer and continue on your way.', '')
       },
 
+      payCultistBribe: () => {
+        const s = get()
+        if (s.player.gold < 500) return
+        set({ player: { ...s.player, gold: s.player.gold - 500 }, pendingCultistChurch: false, townVisited: { ...s.townVisited, church: true } })
+        get().addLog('💸 You pay 500 Gold to the cultists. They let you leave unharmed.', 'log-gold')
+        set({ townScreen: null })
+      },
+
+      acceptCultistCurse: () => {
+        const { player: cp, curse } = handleCurse(get().player)
+        set(s => ({ player: cp, pendingCultistChurch: false, townVisited: { ...s.townVisited, church: true }, stats: { ...s.stats, trapsTriggered: s.stats.trapsTriggered + 1 } }))
+        get().addLog(`🕯 The cultists perform their ritual. Afflicted: ${curse} (${getItemEffect(curse)})`, 'log-danger')
+        set({ townScreen: null })
+      },
+
+      startNecromancerAttack: () => {
+        set({ pendingNecromancerAttack: false, townVisited: { ...get().townVisited, church: true } })
+        get().addLog('💀 A Necromancer rises from the shadows of the church!', 'log-danger')
+        const s = get()
+        const diffMult = DIFFICULTY[s.difficulty]?.enemyMult ?? 1
+        const baseAtk = Math.floor(14 * diffMult), baseDef = Math.floor(8 * diffMult), baseHp = Math.floor(60 * diffMult)
+        const enc = { name: 'Necromancer', atk: baseAtk, def: baseDef, hp: baseHp, count: 1, canSummon: true }
+        const e = { name: 'Necromancer', attack: baseAtk, defense: baseDef, max_hp: baseHp, hp: baseHp, canSummon: true, minions: [] }
+        let buffs = { atk: 0, def: 0, ironWillStacks: 0, berserkUses: 0 }
+        let newPlayer = s.player
+        if (s.player.pendingStrengthPotion) {
+          buffs = { ...buffs, atk: 2 }
+          newPlayer = { ...newPlayer, pendingStrengthPotion: false }
+          get().addLog('🧪 Strength Potion activates!', 'log-gold')
+        }
+        set({
+          player: newPlayer,
+          enemies: [e],
+          selectedTarget: 0,
+          battleBuffs: buffs,
+          playerBlocking: false, playerParrying: false,
+          blockBonus: 0,
+          apRemaining: Math.floor(newPlayer.action_points),
+          enemyTurnPending: false,
+          encounterData: { type: 'fight', tier: 4, exp: 200, gold: 150, enemyData: enc },
+          screen: 'combat',
+        })
+      },
+
       acceptQuestReward: (gold, exp) => {
         const s = get()
         const { player, notifications } = gainExp({ ...s.player, gold: s.player.gold + gold }, exp)
@@ -515,6 +624,8 @@ const useGameStore = create(
         get().addLog(`Quest reward: ${gold} Gold, ${exp} EXP!`, 'log-gold')
         set({ player, townVisited: { ...s.townVisited, tavern: true }, townScreen: null })
       },
+
+      returnToDifficulty: () => set({ screen: 'difficulty' }),
     }),
     {
       name: 'dragon-slayer-save',
@@ -524,6 +635,8 @@ const useGameStore = create(
         activeQuest: s.activeQuest, gameLog: s.gameLog.slice(-20),
         screen: s.screen === 'combat' ? 'exploring' : s.screen,
         dragonRevealedTiles: s.dragonRevealedTiles,
+        difficulty: s.difficulty,
+        stats: s.stats,
       }),
     }
   )
