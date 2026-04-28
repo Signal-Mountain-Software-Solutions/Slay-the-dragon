@@ -37,64 +37,70 @@ export default function App() {
     );
   }
 
-  return (
-    <div className="app">
-      <Header />
-      <Notification />
+ // inside the non-difficulty return
 
-      {/* Two-column layout container (optional — add CSS for this) */}
-      <main className="mainRow">
-        <aside className="leftPanel">
-          <StatsPanel />
-        </aside>
+return (
+  <div className="app">
+    <Header />
+    <Notification />
 
-        <section className="rightPanel">
-          <GameBoard />
-        </section>
-      </main>
+    <main className="mainRow">
+      {/* Board */}
+      <section className="rightPanel">
+        <GameBoard />
+      </section>
 
-      <InventoryBar />
+      {/* Items (above stats on mobile) */}
+      <section className="inventoryPanel">
+        <InventoryBar />
+      </section>
 
-      {/* Overlays */}
-      {screen === 'combat' && (
-        <div className="overlay">
-          <div className="overlay-box">
-            <CombatScreen />
-          </div>
+      {/* Stats (collapsible / scrollable) */}
+      <aside className="statsDock">
+        <StatsPanel />
+      </aside>
+    </main>
+
+    {/* overlays unchanged */}
+    {screen === 'combat' && (
+      <div className="overlay">
+        <div className="overlay-box">
+          <CombatScreen />
         </div>
-      )}
+      </div>
+    )}
 
-      {screen === 'town' && (
-        <div className="overlay">
-          <div className="overlay-box">
-            <TownScreen />
-          </div>
+    {screen === 'town' && (
+      <div className="overlay">
+        <div className="overlay-box">
+          <TownScreen />
         </div>
-      )}
+      </div>
+    )}
 
-      {screen === 'victory' && (
-        <div className="overlay">
-          <div className="overlay-box">
-            <VictoryScreen />
-          </div>
+    {screen === 'victory' && (
+      <div className="overlay">
+        <div className="overlay-box">
+          <VictoryScreen />
         </div>
-      )}
+      </div>
+    )}
 
-      {screen === 'gameover' && (
-        <div className="overlay">
-          <div className="overlay-box">
-            <GameOverScreen />
-          </div>
+    {screen === 'gameover' && (
+      <div className="overlay">
+        <div className="overlay-box">
+          <GameOverScreen />
         </div>
-      )}
+      </div>
+    )}
 
-      {screen === 'exploring' && pendingWandererOffer && (
-        <div className="overlay">
-          <div className="overlay-box">
-            <WandererOffer />
-          </div>
+    {screen === 'exploring' && pendingWandererOffer && (
+      <div className="overlay">
+        <div className="overlay-box">
+          <WandererOffer />
         </div>
-      )}
-    </div>
-  );
+      </div>
+    )}
+  </div>
+ );
 }
