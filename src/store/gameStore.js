@@ -140,25 +140,29 @@ const useGameStore = create(
           case 'fight':
           case 'hard_fight': get().startFight(type, tier); break
 
-          case 'town': {
-            const s3 = get()
-            const isCultist = s3.cultistChurchKey === key
-            const isDeep = pos.x > 4 || pos.y > 4
-            const necromancerRoll = isDeep && Math.random() < 0.10
+    case 'town': {
+     const s3 = get();
+     const isCultist = s3.cultistChurchKey === key;
+     const isDeep = pos.x > 4 && pos.y > 4;
+     const necromancerRoll = isDeep && Math.random() < 0.10;
 
-             set({
-              player: newPlayer,
-              screen: 'town',
-              townScreen: null,
-              townVisited: { shop: false, tavern: false, church: false },
-              pendingCultistChurch: isCultist,
-              pendingNecromancerAttack: !isCultist && necromancerRoll,
-            })
-            get().addLog('🏘 You arrive at a town.', 'log-victory')
-            if (isCultist) get().addLog('Something feels wrong about this place...', 'log-danger')
-            else if (necromancerRoll) get().addLog('The streets are unnervingly quiet...', 'log-danger')
-            break
-          }
+     // ✅ No healing: do NOT override hp here
+     set({
+       screen: 'town',
+       townScreen: null,
+       townVisited: { shop: false, tavern: false, church: false },
+       pendingCultistChurch: isCultist,
+       pendingNecromancerAttack: !isCultist && necromancerRoll,
+     });
+
+     // ✅ Update log text so it doesn't claim healing
+     get().addLog('🏘 You arrive at a town.', 'log-victory');
+
+     if (isCultist) get().addLog('Something feels wrong about this place...', 'log-danger');
+     else if (necromancerRoll) get().addLog('The streets are unnervingly quiet...', 'log-danger');
+
+     break;
+   }
           case 'camp': {
             const p = get().player
             const heal = Math.floor(p.max_hp / 2)
